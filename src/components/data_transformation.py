@@ -1,4 +1,3 @@
-# importing libraries
 import sys
 import os
 from dataclasses import dataclass
@@ -40,10 +39,10 @@ class DataTransformation:
                 steps = [
                     ('imputer', SimpleImputer(strategy='median')),
                     ('scaler', StandardScaler())
-
                 ]
             )
             logging.info('Numeric columns transformation completed')
+            
             cat_pipeline = Pipeline(
                 steps = [
                     ('imputer', SimpleImputer(strategy='most_frequent')),
@@ -53,6 +52,7 @@ class DataTransformation:
             )
             logging.info(f'Categorical Columns: {cat_features}')
             logging.info(f'Numeric Columns: {numerical_features}')
+            
             preprocessor = ColumnTransformer(
                 [
                     ('num_pipeline', num_pipeline, numerical_features),
@@ -70,9 +70,9 @@ class DataTransformation:
             train_df = pd.read_csv(train_path)
             test_df = pd.read_csv(test_path)
 
-            logging.info('read train and test data completed')
+            logging.info('Read train and test data completed')
 
-            logging.info('obtaining preprocessor object')
+            logging.info('Obtaining preprocessor object')
         
             preprocessing_object = self.get_data_transformer_object()
             target_columns_name = 'math score'
@@ -84,18 +84,23 @@ class DataTransformation:
 
             input_feature_test_df = test_df.drop(columns=[target_columns_name], axis=1)
             target_feature_test_df = test_df[target_columns_name]
-            logging.info(f'Appling preprocessing object on training dataframe and test dataframe.')
 
+            logging.info(f'Applying preprocessing object on training and test dataframes.')
+
+            # Fit transform on train data, transform only on test data
             input_feature_train_arr = preprocessing_object.fit_transform(input_feature_train_df)
-            input_feature_test_arr = preprocessing_object.fit_transform(input_feature_test_df) 
+            input_feature_test_arr = preprocessing_object.transform(input_feature_test_df)
 
-            train_arr = np.c_[input_feature_train_arr, np.array(input_feature_train_df)]
+            # Combine processed features with target variable for training
+            train_arr = np.c_[input_feature_train_arr, np.array(target_feature_train_df)]
+
+            # Only input features for test data
             test_arr = np.c_[input_feature_test_arr, np.array(target_feature_test_df)]
 
-            logging.info('scaved preprocessing object.')
+            logging.info('Saving preprocessing object.')
             save_object(
-                file_path = self.data_transformation_config.preprocessor_obj_file_path,
-                obj = preprocessing_object
+                file_path=self.data_transformation_config.preprocessor_obj_file_path,
+                obj=preprocessing_object
             )
 
             return (
